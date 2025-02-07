@@ -350,6 +350,17 @@
   // GLOBAL array to store the current plan (so we can reorder, limit to 10, etc.)
   let currentPlan = [];
   const allDates = [];
+  const selectedPlace = [];
+  // Declare `planData` globally
+  let planData = {
+    user_idx: sessionStorage.getItem("user_idx") || "1",
+    area_code: sessionStorage.getItem("area_code") || "1",
+    title: "",
+    start_date: sessionStorage.getItem("startDate"),
+    end_date: sessionStorage.getItem("endDate"),
+    status: 0,
+    dates: {} // Initialize an empty object to store dates
+  };
 
   function generateDateRange(startDate, endDate) {
     const start = new Date(startDate);
@@ -379,6 +390,9 @@
   function initializeDates() {
     const startDate = sessionStorage.getItem("startDate");
     const endDate = sessionStorage.getItem("endDate");
+    console.log("Stored start date:", sessionStorage.getItem("startDate"));
+    console.log("Stored end date:", sessionStorage.getItem("endDate"));
+
 
     if (!startDate || !endDate) {
       console.error("Start date or end date missing from session storage.");
@@ -412,6 +426,11 @@
 
   // Function to handle date selection
   function selectDate(date, element) {
+    if (selectedDate) {
+      // Save the current plan to `planData.dates[selectedDate]`
+      planData.dates[selectedDate] = [...currentPlan]; // Store a copy
+    }
+
     previousDate = selectedDate;
     selectedDate = date;
 
@@ -419,11 +438,15 @@
     document.querySelectorAll(".date").forEach(d => d.classList.remove("active"));
     element.classList.add("active");
 
-    console.log(`Previous Date: ${previousDate}, Selected Date: ${selectedDate}`);
+    console.log("Previous Date:", previousDate, "Selected Date:", selectedDate);
 
-    // Update places for the selected date
+    // Load saved places for the new date, or initialize an empty array
+    currentPlan = planData.dates[selectedDate] || [];
+
+    // Update UI
     updateSelectedPlaces(selectedDate);
   }
+
 
   // Function to update selected places based on selectedDate
   function updateSelectedPlaces(date) {
@@ -452,9 +475,17 @@
     }
 
     place.date = selectedDate;
+
+    // Save place under the correct date in planData.dates
+    if (!planData.dates[selectedDate]) {
+      planData.dates[selectedDate] = [];
+    }
+
+    planData.dates[selectedDate].push(place);
     currentPlan.push(place);
     updateSelectedPlaces(selectedDate);
   }
+
 
 
   /////
@@ -506,38 +537,6 @@
 
   // 3) Add to plan, with limit of 10
 
-  // function addPlaceToPlan(place) {
-  //   if (currentPlan.length >= 10) {
-  //     alert("이미 10개 장소가 선택되었습니다. 더 이상 추가할 수 없습니다.");
-  //     return;
-  //   }
-  //
-  //   // // Get the selected date (for simplicity, let's assume you have a variable that stores the selected date)
-  //   // const selectedDate = document.querySelector(".date.active").textContent; // Example of getting the active date
-  //   if (!selectedDate) {
-  //     alert("날짜가 선택되지 않았습니다.");
-  //     return;
-  //   }
-  //   place.date = selectedDate;
-  //
-  //
-  //   console.log(selectedDate);
-  //   if (!selectedDate) {
-  //     alert("날짜가 선택되지 않았습니다.");
-  //     return;
-  //   }
-  //
-  //   // Add the selected date to the place object
-  //   place.date = selectedDate; // Assign date to place
-  //
-  //   // Now continue to add the place to the plan as usual
-  //   currentPlan.push(place);
-  //
-  //   // (Re-render or update the plan as needed)
-  //   // renderSelectedPlaces(currentPlan);
-  //   updateSelectedPlaces(selectedDate);
-  //
-  // }
 
 
   // 4) Render selected places in the middle panel
@@ -667,14 +666,19 @@
       return;
     }
 
-    // Fetch session data
-    const user_idx = sessionStorage.getItem("user_idx") || "1";
-    const area_code = sessionStorage.getItem("area_code") || "1";
+    // // Fetch session data
+    // const user_idx = sessionStorage.getItem("user_idx") || "1";
+    // const area_code = sessionStorage.getItem("area_code") || "1";
+    // const start_date = sessionStorage.getItem("startDate");
+    // const end_date = sessionStorage.getItem("endDate");
+    // const title = prompt("여행 계획 제목을 입력하세요:");
+    //
+    // if (!title) return;
+// Fetch session data
     const start_date = sessionStorage.getItem("startDate");
     const end_date = sessionStorage.getItem("endDate");
-    const title = prompt("여행 계획 제목을 입력하세요:");
-
-    if (!title) return;
+    planData.title = prompt("여행 계획 제목을 입력하세요:");
+    if (!planData.title) return;
 
     // Check if start_date and end_date are available
     if (!start_date || !end_date) {
@@ -682,24 +686,30 @@
       return;
     }
 
-    // // Generate all dates between start_date and end_date
-    // const allDates = generateDateRange(start_date, end_date);
+    // Generate all dates between start_date and end_date
+    const allDates = generateDateRange(start_date, end_date);
+    console.log("Generated Date Range:", allDates);
 
-    // Convert plan to structured format
-    const planData = {
-      user_idx: user_idx,
-      area_code: area_code,
-      title: title,
-      start_date: start_date,
-      end_date: end_date,
-      status: 0,
-      dates: {} // Will be populated with places for each date
-    };
-
-    // Initialize empty arrays for each date in the date range
+    // // Convert plan to structured format
+    // const planData = {
+    //   user_idx: user_idx,
+    //   area_code: area_code,
+    //   title: title,
+    //   start_date: start_date,
+    //   end_date: end_date,
+    //   status: 0,
+    //   dates: {} // Will be populated with places for each date
+    // };
+    //
+    // // Initialize empty arrays for each date in the date range
+    // allDates.forEach(date => {
+    //   planData.dates[date] = []; // Initialize an empty array for each date
+    // });
+// Initialize empty arrays for each date in the date range
     allDates.forEach(date => {
-      planData.dates[date] = []; // Initialize an empty array for each date
+      if (!planData.dates[date]) planData.dates[date] = [];
     });
+
 
     // Populate the dates with the places from currentPlan
     currentPlan.forEach(place => {
@@ -718,19 +728,23 @@
     });
 
     // Ensure the dates object is correctly populated
-    console.log("Plan data to be sent:", planData);
+    console.log("Plan data to be sent:", JSON.stringify(planData));
 
     // Send planData to the server
     fetch("/Controller?type=savePlan", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(planData)
     })
-        .then(response => response.json())
+        .then(response => response.json())  // Convert response to text first
+
+        // .then(text => {
+        //   console.log("Raw server response:", text); // Check the response
+        //   return JSON.parse(text); // Then try parsing JSON
+        // })
         .then(data => {
-          console.log("data:", data);
+          data.json()
+          console.log("Parsed JSON response:", data);
           if (data.success) {
             alert("여행 계획이 저장되었습니다!");
           } else {
@@ -741,6 +755,7 @@
           console.error("Error:", error);
           alert("서버와의 연결에서 문제가 발생했습니다.");
         });
+
   }
 
 </script>

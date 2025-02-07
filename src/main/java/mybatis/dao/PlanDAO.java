@@ -57,10 +57,9 @@ public class PlanDAO {
   }
 
   // Insert into place_table
-  public static boolean insertPlace(int planIdx, int dateIdx, int order, JSONObject place) {
+  public static boolean insertPlace(int dateIdx, int order, JSONObject place) {
     try (SqlSession ss = FactoryService.getFactory().openSession()) {
       Map<String, Object> param = new HashMap<>();
-      param.put("plan_idx", planIdx);
       param.put("date_idx", dateIdx);
       param.put("visit_order", order);
       param.put("content_id", place.getString("content_id"));
