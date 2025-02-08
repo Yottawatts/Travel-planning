@@ -77,72 +77,75 @@ public class PlanDAO {
     return false;
   }
 
-  // Retrieve the full plan (with dates and places) by plan id.
-  public static PlanVO getPlanById(int planId) {
-    try (SqlSession ss = FactoryService.getFactory().openSession()) {
-      return ss.selectOne("plan.getPlanById", planId);
-    }
-  }
 
-  // Copy a plan (for "내 일정에 담기") by inserting a new plan and then
-  // copying its dates and places.
-  public static int copyPlan(PlanVO originalPlan, String newStartDate, String newEndDate, String newUserId) {
-    PlanVO newPlan = new PlanVO();
-    newPlan.setUser_idx(newUserId);
-    newPlan.setArea_code(originalPlan.getArea_code());
-    newPlan.setTitle(originalPlan.getTitle() + " - 복사본");
-    newPlan.setStart_date(newStartDate);
-    newPlan.setEnd_date(newEndDate);
-    newPlan.setStatus("0");
 
-    int newPlanIdx = insertPlan(newPlan);
-    if (newPlanIdx == -1) return -1;
 
-    List<DateVO> originalDates = originalPlan.getDate_idx();
-    if (originalDates != null) {
-      for (DateVO dateVO : originalDates) {
-        int newDateIdx = insertDate(newPlanIdx, dateVO.getDate());
-        if (newDateIdx == -1) return -1;
-
-        List<PlaceVO> places = dateVO.getPlace_idx();
-        if (places != null) {
-          int order = 1;
-          for (PlaceVO placeVO : places) {
-            boolean success = insertPlace2(newPlanIdx, newDateIdx, order, placeVO);
-            if (!success) return -1;
-            order++;
-          }
-        }
-      }
-    }
-    return newPlanIdx;
-  }
-
-  // NEW insertPlace2 (using PlaceVO) - SAFE AND SEPARATE
-  public static boolean insertPlace2(int planIdx, int dateIdx, int order, PlaceVO place) {
-    try (SqlSession ss = FactoryService.getFactory().openSession()) {
-      Map<String, Object> param = new HashMap<>();
-      param.put("plan_idx", planIdx);
-      param.put("date_idx", dateIdx);
-      param.put("visit_order", order);
-      param.put("content_id", place.getContent_id());
-      param.put("content_type_id", Integer.parseInt(place.getContent_type_id())); // Convert String -> int
-      param.put("title", place.getTitle());
-      param.put("thumbnail", place.getThumbnail());
-      param.put("map_x", Double.parseDouble(place.getMap_x())); // Convert String -> double
-      param.put("map_y", Double.parseDouble(place.getMap_y())); // Convert String -> double
-      param.put("time", place.getTime());
-
-      int cnt = ss.insert("plan.insertPlace", param);
-      if (cnt > 0) {
-        ss.commit();
-        return true;
-      } else {
-        ss.rollback();
-      }
-    } catch (NumberFormatException e) {
-      e.printStackTrace();
-    }
-    return false;
-  }
+  // // Retrieve the full plan (with dates and places) by plan id.
+  // public static PlanVO getPlanById(int planId) {
+  //   try (SqlSession ss = FactoryService.getFactory().openSession()) {
+  //     return ss.selectOne("plan.getPlanById", planId);
+  //   }
+  // }
+  //
+  // // Copy a plan (for "내 일정에 담기") by inserting a new plan and then
+  // // copying its dates and places.
+  // public static int copyPlan(PlanVO originalPlan, String newStartDate, String newEndDate, String newUserId) {
+  //   PlanVO newPlan = new PlanVO();
+  //   newPlan.setUser_idx(newUserId);
+  //   newPlan.setArea_code(originalPlan.getArea_code());
+  //   newPlan.setTitle(originalPlan.getTitle() + " - 복사본");
+  //   newPlan.setStart_date(newStartDate);
+  //   newPlan.setEnd_date(newEndDate);
+  //   newPlan.setStatus("0");
+  //
+  //   int newPlanIdx = insertPlan(newPlan);
+  //   if (newPlanIdx == -1) return -1;
+  //
+  //   List<DateVO> originalDates = originalPlan.getDate_idx();
+  //   if (originalDates != null) {
+  //     for (DateVO dateVO : originalDates) {
+  //       int newDateIdx = insertDate(newPlanIdx, dateVO.getDate());
+  //       if (newDateIdx == -1) return -1;
+  //
+  //       List<PlaceVO> places = dateVO.getPlace_idx();
+  //       if (places != null) {
+  //         int order = 1;
+  //         for (PlaceVO placeVO : places) {
+  //           boolean success = insertPlace2(newPlanIdx, newDateIdx, order, placeVO);
+  //           if (!success) return -1;
+  //           order++;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return newPlanIdx;
+  // }
+  //
+  // // NEW insertPlace2 (using PlaceVO) - SAFE AND SEPARATE
+  // public static boolean insertPlace2(int planIdx, int dateIdx, int order, PlaceVO place) {
+  //   try (SqlSession ss = FactoryService.getFactory().openSession()) {
+  //     Map<String, Object> param = new HashMap<>();
+  //     param.put("plan_idx", planIdx);
+  //     param.put("date_idx", dateIdx);
+  //     param.put("visit_order", order);
+  //     param.put("content_id", place.getContent_id());
+  //     param.put("content_type_id", Integer.parseInt(place.getContent_type_id())); // Convert String -> int
+  //     param.put("title", place.getTitle());
+  //     param.put("thumbnail", place.getThumbnail());
+  //     param.put("map_x", Double.parseDouble(place.getMap_x())); // Convert String -> double
+  //     param.put("map_y", Double.parseDouble(place.getMap_y())); // Convert String -> double
+  //     param.put("time", place.getTime());
+  //
+  //     int cnt = ss.insert("plan.insertPlace", param);
+  //     if (cnt > 0) {
+  //       ss.commit();
+  //       return true;
+  //     } else {
+  //       ss.rollback();
+  //     }
+  //   } catch (NumberFormatException e) {
+  //     e.printStackTrace();
+  //   }
+  //   return false;
+  // }
 }
