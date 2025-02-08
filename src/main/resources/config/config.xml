@@ -9,7 +9,7 @@
       <transactionManager type="JDBC"/>
       <dataSource type="POOLED">
         <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
-        <property name="url" value="jdbc:mysql://3.39.251.247:3306/travel"/>
+        <property name="url" value="jdbc:mysql://43.201.37.240:3306/travel"/>
         <property name="username" value="travel_admin"/>
         <property name="password" value="1111"/>
       </dataSource>
@@ -26,7 +26,5 @@
     <mapper resource="mapper/plan.xml"/>
     <mapper resource="mapper/customer_service.xml"/>
     <mapper resource="mapper/image.xml"/>
-    <mapper resource="mapper/plan_mapper.xml"/>
-
   </mappers>
 </configuration>
