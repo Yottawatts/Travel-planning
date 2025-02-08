@@ -22,4 +22,59 @@
     INSERT INTO place_table (date_idx, visit_order, content_id, content_type_id, title, thumbnail, map_x, map_y, time)
     VALUES (#{date_idx}, #{visit_order}, #{content_id}, #{content_type_id}, #{title}, #{thumbnail}, #{map_x}, #{map_y}, #{time});
   </insert>
+
+<resultMap id="PlanResultMap" type="mybatis.vo.PlanVO">
+  <id property="idx" column="plan_idx" />
+  <result property="user_idx" column="user_idx" />
+  <result property="area_code" column="area_code" />
+  <result property="title" column="title" />
+  <result property="start_date" column="start_date" />
+  <result property="end_date" column="end_date" />
+  <result property="status" column="status" />
+  <collection property="dates" ofType="mybatis.vo.DateVO">
+    <id property="idx" column="date_idx" />
+    <result property="date" column="date" />
+    <result property="memo" column="memo" />
+    <collection property="places" ofType="mybatis.vo.PlaceVO">
+      <id property="place_idx" column="place_idx" />
+      <result property="visit_order" column="visit_order" />
+      <result property="content_id" column="content_id" />
+      <result property="content_type_id" column="content_type_id" />
+      <result property="title" column="place_title" />
+      <result property="thumbnail" column="thumbnail" />
+      <result property="map_x" column="map_x" />
+      <result property="map_y" column="map_y" />
+      <result property="time" column="time" />
+    </collection>
+  </collection>
+</resultMap>
+
+<!-- Select the full plan (join plan_table, date_table, place_table) -->
+<select id="getPlanById" parameterType="int" resultMap="PlanResultMap">
+  SELECT
+  p.idx as plan_idx,
+  p.user_idx,
+  p.area_code,
+  p.title,
+  p.start_date,
+  p.end_date,
+  p.status,
+  d.idx as date_idx,
+  d.date,
+  d.memo,
+  pt.place_idx,
+  pt.visit_order,
+  pt.content_id,
+  pt.content_type_id,
+  pt.title as place_title,
+  pt.thumbnail,
+  pt.map_x,
+  pt.map_y,
+  pt.time
+  FROM plan_table p
+  LEFT JOIN date_table d ON p.idx = d.plan_idx
+  LEFT JOIN place_table pt ON d.idx = pt.date_idx
+  WHERE p.idx = #{planId}
+  ORDER BY d.date ASC, pt.visit_order ASC
+</select>
 </mapper>
