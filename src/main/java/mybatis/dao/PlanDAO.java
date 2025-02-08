@@ -1,6 +1,7 @@
 package mybatis.dao;
 
 import mybatis.service.FactoryService;
+import mybatis.vo.PlaceVO;
 import mybatis.vo.PlanVO;
 import org.apache.ibatis.session.SqlSession;
 import org.json.JSONObject;
@@ -37,7 +38,6 @@ public class PlanDAO {
   }
 
 
-
   // Insert into date_table
   public static int insertDate(int planIdx, String date) {
     try (SqlSession ss = FactoryService.getFactory().openSession()) {
@@ -69,6 +69,87 @@ public class PlanDAO {
       param.put("map_x", place.getDouble("map_x"));
       param.put("map_y", place.getDouble("map_y"));
       param.put("time", place.getString("time"));
+
+      int cnt = ss.insert("plan.insertPlace", param);
+      if (cnt > 0) {
+        ss.commit();
+        return true;
+      } else {
+        ss.rollback();
+      }
+    }
+    return false;
+  }
+
+
+  // Retrieve the full plan (with dates and places) by plan id.
+  public static PlanVO getPlanById(int planId) {
+    try (SqlSession ss = FactoryService.getFactory().openSession()) {
+      return ss.selectOne("plan.getPlanById", planId);
+    }
+  }
+
+
+
+
+
+
+
+
+  // Copy a plan (for "내 일정에 담기") by inserting a new plan and then
+  // copying its dates and places. (This is a simplified version.)
+  public static int copyPlan(PlanVO originalPlan, String newStartDate, String newEndDate, String newUserId) {
+    // Create a new plan based on the original plan’s details.
+    mybatis.vo.PlanVO newPlan = new mybatis.vo.PlanVO();
+    newPlan.setUser_idx(newUserId);
+    newPlan.setArea_code(originalPlan.getArea_code());
+    newPlan.setTitle(originalPlan.getTitle() + " - 복사본");
+    newPlan.setStart_date(newStartDate);
+    newPlan.setEnd_date(newEndDate);
+    newPlan.setStatus("0"); // active
+
+    int newPlanIdx = insertPlan(newPlan);
+    if(newPlanIdx == -1) {
+      return -1;
+    }
+    // Loop through the original plan’s dates and copy them.
+    if(originalPlan.getDates() != null) {
+      for (mybatis.vo.DateVO dateVO : originalPlan.getDates()) {
+        // Here we assume that dateVO.getDate() returns a String;
+        // adjust if you use java.util.Date.
+        int newDateIdx = insertDate(newPlanIdx, dateVO.getDate());
+        if(newDateIdx == -1) {
+          return -1;
+        }
+        if(dateVO.getPlaces() != null) {
+          int order = 1;
+          for (mybatis.vo.PlaceVO placeVO : dateVO.getPlaces()) {
+            boolean success = insertPlace(newPlanIdx, newDateIdx, order, placeVO);
+            if(!success) {
+              return -1;
+            }
+            order++;
+          }
+        }
+      }
+    }
+    return newPlanIdx;
+  }
+
+  // NEW insertPlace2 (using PlaceVO) - SAFE AND SEPARATE
+  public static boolean insertPlace2(int planIdx, int dateIdx, int order, PlaceVO place) {
+    try (SqlSession ss = FactoryService.getFactory().openSession()) {
+      Map<String, Object> param = new HashMap<>();
+      param.put("plan_idx", planIdx);
+      param.put("date_idx", dateIdx);
+      param.put("visit_order", order);
+      param.put("content_id", place.getContent_id());
+      param.put("content_type_id", place.getContent_type_id());
+      param.put("title", place.getTitle());
+      param.put("thumbnail", place.getThumbnail());
+      param.put("map_x", place.getMap_x());
+      param.put("map_y", place.getMap_y());
+      param.put("time", place.getTime());
 
       int cnt = ss.insert("plan.insertPlace", param);
       if (cnt > 0) {
